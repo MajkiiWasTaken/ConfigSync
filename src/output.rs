@@ -4,7 +4,7 @@
 *
 * Colored CLI output
 *
-* ver. 0.1.0
+* ver. 0.4.0
 *************************************************/
 
 use colored::Colorize;

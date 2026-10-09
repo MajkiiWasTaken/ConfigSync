@@ -1,6 +1,7 @@
-# Copy to %APPDATA%\ConfigSync\config.toml on Windows
-# or ~/.config/configsync/config.toml on Linux.
-# Only explicitly listed files are backed up. Never add private keys or tokens.
+# Copy to %APPDATA%\ConfigSync\config.toml (Windows)
+# or ~/.config/configsync/config.toml (Linux).
+# Source paths can be individual files or complete directories.
+# Only explicitly configured paths are copied. Do not include credentials, SSH keys or tokens.
 
 [profiles.development]
 description = "Development machine preferences"
@@ -8,8 +9,11 @@ description = "Development machine preferences"
 gitconfig = "~/.gitconfig"
 # vscode_settings = '${APPDATA}/Code/User/settings.json'
 # vscode_keybindings = '${APPDATA}/Code/User/keybindings.json'
+# vscode_snippets = '${APPDATA}/Code/User/snippets'
+# devdock_sessions = '${APPDATA}/DevDock'
+# deploytool_config = '${APPDATA}/DeployTool/deploy.toml'
 
 [profiles.personal]
 description = "Personal configuration"
 [profiles.personal.files]
-example = "~/.gitconfig"   # Replace with a real non-sensitive file
+example = "~/.gitconfig" # Replace with a non-sensitive file or directory

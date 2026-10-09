@@ -4,12 +4,15 @@
 *
 * ConfigSync CLI entry point
 *
-* ver. 0.1.0
+* ver. 0.4.0
 *************************************************/
 
+mod archive;
 mod backup;
 mod config;
+mod discovery;
 mod output;
+mod profile_manager;
 
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
@@ -29,6 +32,15 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Initialize a user configuration (never overwrites)
+    Init,
+    /// Manage profiles and their selected paths
+    Profile {
+        #[command(subcommand)]
+        command: ProfileCommands,
+    },
+    /// Find common configuration locations without modifying files
+    Scan,
     /// Show configured profiles
     Profiles,
     /// Show profile details
@@ -51,12 +63,60 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
     },
+    /// Export an existing backup as a portable ZIP
+    Export {
+        name: String,
+        #[arg(long)]
+        id: Option<String>,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    /// Import an existing ZIP as a local backup (does not restore)
+    Import { file: PathBuf },
     /// Show configuration and backups directory
     Paths,
 }
 
+#[derive(Subcommand)]
+enum ProfileCommands {
+    /// Create an empty profile
+    Add {
+        name: String,
+        #[arg(long)]
+        description: Option<String>,
+    },
+    /// Add a file or directory to a profile
+    Set {
+        name: String,
+        alias: String,
+        path: String,
+    },
+    /// Remove one path from a profile
+    Unset { name: String, alias: String },
+    /// Remove a profile, leaving its backups untouched
+    Remove {
+        name: String,
+        #[arg(long)]
+        yes: bool,
+    },
+}
+
 fn run() -> Result<(), String> {
     let cli = Cli::parse();
+    if matches!(cli.command, Commands::Init) {
+        return profile_manager::init(cli.config.as_deref());
+    }
+    if let Commands::Profile { command } = &cli.command {
+        let path = cli.config.clone().unwrap_or(config::default_config_path()?);
+        return profile_manager::run(&path, command);
+    }
+    if matches!(cli.command, Commands::Import { .. }) {
+        if let Commands::Import { file } = cli.command {
+            output::banner();
+            archive::import(&file)?;
+        }
+        return Ok(());
+    }
     if matches!(cli.command, Commands::Paths) {
         output::banner();
         output::info(&format!(
@@ -71,6 +131,7 @@ fn run() -> Result<(), String> {
     let config_path = cli.config.unwrap_or(config::default_config_path()?);
     let settings = config::load(&config_path)?;
     match cli.command {
+        Commands::Scan => discovery::scan()?,
         Commands::Profiles => {
             output::banner();
             output::heading("Configured profiles");
@@ -122,7 +183,16 @@ fn run() -> Result<(), String> {
             yes,
             dry_run,
         )?,
-        Commands::Paths => unreachable!(),
+        Commands::Export { name, id, output } => {
+            if !settings.profiles.contains_key(&name) {
+                return Err(format!("Unknown profile: {name}"));
+            }
+            output::banner();
+            archive::export(&name, id.as_deref(), &output)?;
+        }
+        Commands::Import { .. } | Commands::Paths | Commands::Init | Commands::Profile { .. } => {
+            unreachable!()
+        }
     }
     Ok(())
 }

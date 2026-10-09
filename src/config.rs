@@ -4,21 +4,21 @@
 *
 * Profile configuration and local storage paths
 *
-* ver. 0.1.0
+* ver. 0.4.0
 *************************************************/
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
     env, fs,
     path::{Path, PathBuf},
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
     pub profiles: BTreeMap<String, Profile>,
 }
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Profile {
     pub description: Option<String>,
     pub files: BTreeMap<String, String>,
@@ -70,14 +70,10 @@ pub fn load(path: &Path) -> Result<Config, String> {
     let data =
         fs::read_to_string(path).map_err(|e| format!("Cannot read {}: {e}", path.display()))?;
     let config: Config = toml::from_str(&data).map_err(|e| format!("Invalid TOML: {e}"))?;
-    if config.profiles.is_empty() {
-        return Err("At least one profile is required".into());
-    }
+
     for (name, profile) in &config.profiles {
         valid_name(name)?;
-        if profile.files.is_empty() {
-            return Err(format!("Profile '{name}' has no files"));
-        }
+
         for key in profile.files.keys() {
             valid_name(key)?;
         }
