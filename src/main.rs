@@ -4,11 +4,12 @@
 *
 * ConfigSync CLI entry point
 *
-* ver. 0.4.0
+* ver. 0.5.0
 *************************************************/
 
 mod archive;
 mod backup;
+mod comparison;
 mod config;
 mod discovery;
 mod output;
@@ -33,7 +34,10 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Initialize a user configuration (never overwrites)
-    Init,
+    Init {
+        #[arg(long)]
+        scan: bool,
+    },
     /// Manage profiles and their selected paths
     Profile {
         #[command(subcommand)]
@@ -45,6 +49,14 @@ enum Commands {
     Profiles,
     /// Show profile details
     Info { name: String },
+    /// Detailed profile inventory
+    ProfileShow { name: String },
+    /// Compare current configuration with last backup
+    Diff {
+        name: String,
+        #[arg(long)]
+        id: Option<String>,
+    },
     /// Back up files in a profile
     Backup {
         name: String,
@@ -103,8 +115,8 @@ enum ProfileCommands {
 
 fn run() -> Result<(), String> {
     let cli = Cli::parse();
-    if matches!(cli.command, Commands::Init) {
-        return profile_manager::init(cli.config.as_deref());
+    if let Commands::Init { scan } = &cli.command {
+        return profile_manager::init(cli.config.as_deref(), *scan);
     }
     if let Commands::Profile { command } = &cli.command {
         let path = cli.config.clone().unwrap_or(config::default_config_path()?);
@@ -140,6 +152,21 @@ fn run() -> Result<(), String> {
             }
             output::success(&format!("{} profile(s)", settings.profiles.len()));
         }
+        Commands::ProfileShow { name } => comparison::show(
+            &name,
+            settings
+                .profiles
+                .get(&name)
+                .ok_or(format!("Unknown profile: {name}"))?,
+        )?,
+        Commands::Diff { name, id } => comparison::diff(
+            &name,
+            settings
+                .profiles
+                .get(&name)
+                .ok_or(format!("Unknown profile: {name}"))?,
+            id.as_deref(),
+        )?,
         Commands::Info { name } => {
             let profile = settings
                 .profiles
@@ -190,9 +217,10 @@ fn run() -> Result<(), String> {
             output::banner();
             archive::export(&name, id.as_deref(), &output)?;
         }
-        Commands::Import { .. } | Commands::Paths | Commands::Init | Commands::Profile { .. } => {
-            unreachable!()
-        }
+        Commands::Import { .. }
+        | Commands::Paths
+        | Commands::Init { .. }
+        | Commands::Profile { .. } => unreachable!(),
     }
     Ok(())
 }

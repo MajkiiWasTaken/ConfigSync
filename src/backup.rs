@@ -4,7 +4,7 @@
 *
 * Profile backups, integrity checks and safe restore
 *
-* ver. 0.4.0
+* ver. 0.5.0
 *************************************************/
 
 use crate::{
@@ -193,9 +193,17 @@ pub fn list(name: &str) -> Result<(), String> {
         output::warn("No backups found");
     }
     for path in items {
+        let mut bytes = 0u64;
+        for item in WalkDir::new(&path).follow_links(false) {
+            let item = item.map_err(|e| e.to_string())?;
+            if item.file_type().is_file() {
+                bytes += item.metadata().map_err(|e| e.to_string())?.len();
+            }
+        }
         println!(
-            "  {}",
-            path.file_name().unwrap_or_default().to_string_lossy()
+            "  {}  ({} bytes)",
+            path.file_name().unwrap_or_default().to_string_lossy(),
+            bytes
         );
     }
     Ok(())

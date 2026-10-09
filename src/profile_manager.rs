@@ -4,7 +4,7 @@
 *
 * Initialize and manage selected configuration profiles
 *
-* ver. 0.4.0
+* ver. 0.5.0
 *************************************************/
 
 use crate::{
@@ -41,7 +41,7 @@ fn write_config(path: &Path, data: &Config) -> Result<(), String> {
     Ok(())
 }
 
-pub fn init(custom: Option<&Path>) -> Result<(), String> {
+pub fn init(custom: Option<&Path>, scan: bool) -> Result<(), String> {
     let path = custom
         .map(Path::to_path_buf)
         .map(Ok)
@@ -52,13 +52,44 @@ pub fn init(custom: Option<&Path>) -> Result<(), String> {
             path.display()
         ));
     }
-    let settings = Config {
+    let mut settings = Config {
         profiles: BTreeMap::new(),
     };
+    if scan {
+        let mut files = BTreeMap::new();
+        for (label, location) in crate::discovery::candidates()? {
+            if !location.exists() {
+                continue;
+            }
+            let alias = match label.as_str() {
+                "Git configuration" => "gitconfig",
+                "VS Code settings" => "vscode_settings",
+                "VS Code keybindings" => "vscode_keybindings",
+                "Windows Terminal settings" => "windows_terminal",
+                "PowerShell profile" => "powershell_profile",
+                "DevDock sessions" => "devdock_sessions",
+                "DeployTool configuration" => "deploytool_config",
+                _ => continue,
+            };
+            // Avoid implicitly adding directories and files whose names suggest secrets.
+            files.insert(alias.to_owned(), location.to_string_lossy().into_owned());
+        }
+        settings.profiles.insert(
+            "development".into(),
+            Profile {
+                description: Some("Discovered development configuration".into()),
+                files,
+            },
+        );
+    }
     write_config(&path, &settings)?;
     output::banner();
     output::success(&format!("Created configuration: {}", path.display()));
-    output::info("Next: csync profile add development");
+    output::info(if scan {
+        "Review the discovered paths before backup: csync profile-show development"
+    } else {
+        "Next: csync profile add development"
+    });
     Ok(())
 }
 

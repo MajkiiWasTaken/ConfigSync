@@ -4,14 +4,12 @@
 *
 * Detect common developer configuration paths
 *
-* ver. 0.4.0
+* ver. 0.5.0
 *************************************************/
 use crate::{config, output};
 use std::{env, path::PathBuf};
 
-pub fn scan() -> Result<(), String> {
-    output::banner();
-    output::heading("Scanning development environment");
+pub fn candidates() -> Result<Vec<(String, PathBuf)>, String> {
     let home = env::var_os(if cfg!(windows) { "USERPROFILE" } else { "HOME" })
         .ok_or("Home directory unavailable")?;
     let home = PathBuf::from(home);
@@ -56,7 +54,17 @@ pub fn scan() -> Result<(), String> {
             home.join(".config/deploytool/deploy.toml"),
         ),
     ]);
+    Ok(candidates
+        .into_iter()
+        .map(|(label, path)| (label.to_owned(), path))
+        .collect())
+}
+
+pub fn scan() -> Result<(), String> {
+    output::banner();
+    output::heading("Scanning development environment");
     let mut found = 0;
+    let candidates = candidates()?;
     for (label, path) in candidates {
         if path.exists() {
             output::success(&format!("{label}: {}", path.display()));
@@ -68,7 +76,7 @@ pub fn scan() -> Result<(), String> {
     output::warn("SSH keys, credentials and tokens are not scanned or copied.");
     output::info(&format!("Found {found} configuration location(s)."));
     output::info(&format!(
-        "Edit {} to include selected paths.",
+        "Use csync init --scan to create a new discovered profile, or edit {}.",
         config::default_config_path()?.display()
     ));
     Ok(())
