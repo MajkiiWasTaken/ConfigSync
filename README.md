@@ -179,7 +179,7 @@ GitHub Actions packages Windows `.zip` and Linux `.tar.gz` builds on version tag
 
 ## Author
 
-**Michal Švrček** — [MajkiiWasTaken](https://github.com/MajkiiWasTaken)
+**Michal Švrček**
 
 ## License
 
