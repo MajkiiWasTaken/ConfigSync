@@ -4,7 +4,7 @@
 *
 * Detect common developer configuration paths
 *
-* ver. 0.5.0
+* ver. 0.7.0
 *************************************************/
 use crate::{config, output};
 use std::{env, path::PathBuf};

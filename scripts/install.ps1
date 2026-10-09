@@ -2,7 +2,7 @@
 # * File: install.ps1
 # * Author: Michal Švrček
 # * Windows per-user installer
-# * ver. 0.4.0
+# * ver. 0.7.0
 # *************************************************/
 [CmdletBinding()]
 param([string]$BinaryPath)

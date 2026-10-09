@@ -2,7 +2,7 @@
 # * File: uninstall.ps1
 # * Author: Michal Švrček
 # * Windows per-user uninstaller (preserves settings/backups)
-# * ver. 0.4.0
+# * ver. 0.7.0
 # *************************************************/
 $ErrorActionPreference = 'Stop'
 $installDir = Join-Path $env:LOCALAPPDATA 'Programs\ConfigSync'

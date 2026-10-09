@@ -4,7 +4,7 @@
 *
 * Initialize and manage selected configuration profiles
 *
-* ver. 0.5.0
+* ver. 0.7.0
 *************************************************/
 
 use crate::{

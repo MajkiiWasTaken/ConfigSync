@@ -4,7 +4,7 @@
 *
 * Portable ZIP export/import with safe paths and SHA-256 validation
 *
-* ver. 0.5.0
+* ver. 0.7.0
 *************************************************/
 
 use crate::{

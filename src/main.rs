@@ -4,7 +4,7 @@
 *
 * ConfigSync CLI entry point
 *
-* ver. 0.5.0
+* ver. 0.7.0
 *************************************************/
 
 mod archive;
@@ -12,6 +12,7 @@ mod backup;
 mod comparison;
 mod config;
 mod discovery;
+mod migration;
 mod output;
 mod profile_manager;
 
@@ -85,6 +86,20 @@ enum Commands {
     },
     /// Import an existing ZIP as a local backup (does not restore)
     Import { file: PathBuf },
+    /// Plan or apply a migration using local profile path mappings
+    Migrate {
+        name: String,
+        #[arg(long)]
+        id: Option<String>,
+        #[arg(long)]
+        yes: bool,
+        /// Restore only selected aliases; repeat --only for multiple aliases
+        #[arg(long = "only")]
+        only: Vec<String>,
+        /// Do not overwrite any existing destination files
+        #[arg(long)]
+        skip_existing: bool,
+    },
     /// Show configuration and backups directory
     Paths,
 }
@@ -158,6 +173,23 @@ fn run() -> Result<(), String> {
                 .profiles
                 .get(&name)
                 .ok_or(format!("Unknown profile: {name}"))?,
+        )?,
+        Commands::Migrate {
+            name,
+            id,
+            yes,
+            only,
+            skip_existing,
+        } => migration::run(
+            &name,
+            settings
+                .profiles
+                .get(&name)
+                .ok_or(format!("Unknown profile: {name}"))?,
+            id.as_deref(),
+            yes,
+            &only,
+            skip_existing,
         )?,
         Commands::Diff { name, id } => comparison::diff(
             &name,

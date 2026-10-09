@@ -4,7 +4,7 @@
 *
 * Profile backups, integrity checks and safe restore
 *
-* ver. 0.5.0
+* ver. 0.7.0
 *************************************************/
 
 use crate::{
@@ -296,6 +296,20 @@ fn build_actions(
     }
     Ok(actions)
 }
+pub fn restore_plan(
+    name: &str,
+    profile: &Profile,
+    selected: Option<&str>,
+) -> Result<Vec<(PathBuf, PathBuf)>, String> {
+    let folder = selected_folder(name, selected)?;
+    let manifest = read_manifest(&folder, name)?;
+    let actions = build_actions(&folder, profile, &manifest)?;
+    for (_, destination) in &actions {
+        check_dest(destination)?;
+    }
+    Ok(actions)
+}
+
 fn check_dest(dest: &Path) -> Result<(), String> {
     for path in dest.ancestors() {
         if let Ok(meta) = fs::symlink_metadata(path) {
@@ -316,6 +330,18 @@ pub fn restore(
     yes: bool,
     dry_run: bool,
 ) -> Result<(), String> {
+    restore_filtered(name, profile, selected, yes, dry_run, None, false)
+}
+
+pub fn restore_filtered(
+    name: &str,
+    profile: &Profile,
+    selected: Option<&str>,
+    yes: bool,
+    dry_run: bool,
+    only: Option<&BTreeSet<String>>,
+    skip_existing: bool,
+) -> Result<(), String> {
     if yes && dry_run {
         return Err("Choose --yes or --dry-run, not both".into());
     }
@@ -323,7 +349,32 @@ pub fn restore(
     output::heading(&format!("Restore: {name}"));
     let folder = selected_folder(name, selected)?;
     let manifest = read_manifest(&folder, name)?;
-    let actions = build_actions(&folder, profile, &manifest)?;
+    let mut actions = build_actions(&folder, profile, &manifest)?;
+    if let Some(allowed) = only {
+        let unknown: Vec<_> = allowed
+            .iter()
+            .filter(|alias| !profile.files.contains_key(*alias))
+            .collect();
+        if !unknown.is_empty() {
+            return Err(format!("Unknown aliases: {:?}", unknown));
+        }
+        let selected_sources: BTreeSet<PathBuf> = manifest
+            .entries
+            .iter()
+            .filter(|e| allowed.contains(&e.alias))
+            .map(|e| folder.join("data").join(&e.relative))
+            .collect();
+        if manifest.entries.is_empty() {
+            return Err("Selective restore requires a v0.2+ snapshot".into());
+        }
+        actions.retain(|(source, _)| selected_sources.contains(source));
+    }
+    if skip_existing {
+        actions.retain(|(_, destination)| !destination.exists());
+    }
+    if actions.is_empty() {
+        return Err("No files matched the selected migration options".into());
+    }
     output::info(&format!(
         "Backup ID: {}",
         folder.file_name().unwrap_or_default().to_string_lossy()

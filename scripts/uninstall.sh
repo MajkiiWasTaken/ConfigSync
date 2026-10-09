@@ -3,7 +3,7 @@
 # * File: uninstall.sh
 # * Author: Michal Švrček
 # * Linux per-user uninstaller (preserves settings/backups)
-# * ver. 0.4.0
+# * ver. 0.7.0
 # *************************************************/
 set -euo pipefail
 rm -f "$HOME/.local/bin/csync"

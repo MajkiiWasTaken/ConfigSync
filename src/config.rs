@@ -4,7 +4,7 @@
 *
 * Profile configuration and local storage paths
 *
-* ver. 0.5.0
+* ver. 0.7.0
 *************************************************/
 
 use serde::{Deserialize, Serialize};

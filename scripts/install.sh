@@ -3,7 +3,7 @@
 # * File: install.sh
 # * Author: Michal Švrček
 # * Linux per-user installer
-# * ver. 0.4.0
+# * ver. 0.7.0
 # *************************************************/
 set -euo pipefail
 source_binary="${1:-$(dirname "$(dirname "$(realpath "$0")")")/target/release/csync}"

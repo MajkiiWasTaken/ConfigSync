@@ -4,7 +4,7 @@
 *
 * Profile inventory, backup size and SHA-256 comparison
 *
-* ver. 0.5.0
+* ver. 0.7.0
 *************************************************/
 use crate::{
     backup,

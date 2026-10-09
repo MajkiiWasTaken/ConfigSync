@@ -28,13 +28,13 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory dist | Out-Null
-          Copy-Item target/release/csync.exe, scripts/install.ps1, scripts/uninstall.ps1, README.md, config.example.toml dist/
+          Copy-Item target/release/csync.exe, scripts/install.ps1, scripts/uninstall.ps1, README.md, LICENSE, config.example.toml dist/
           Compress-Archive dist/* ConfigSync-windows-x86_64.zip
       - name: Package Linux
         if: runner.os == 'Linux'
         run: |
           mkdir -p dist
-          cp target/release/csync scripts/install.sh scripts/uninstall.sh README.md config.example.toml dist/
+          cp target/release/csync scripts/install.sh scripts/uninstall.sh README.md LICENSE config.example.toml dist/
           tar -czf ConfigSync-linux-x86_64.tar.gz -C dist .
       - uses: actions/upload-artifact@v4
         with:
